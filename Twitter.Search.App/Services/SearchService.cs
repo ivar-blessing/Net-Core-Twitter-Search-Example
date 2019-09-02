@@ -18,6 +18,7 @@ namespace Twitter.Search.App.Services
         public SearchService(IOptions<AppSettings> appSettings)
         {
             _appSettings = appSettings.Value;
+            GetAccessToken();
             CreateTwitterClient();
         }
 
@@ -47,21 +48,21 @@ namespace Twitter.Search.App.Services
         /// </summary>
         /// <returns></returns>
         /// <remarks>Not used currently as token is read from AppSettings</remarks>
-        private async Task GetAccessToken()
+        private void GetAccessToken()
         {
             var authToken = Base64Encode($"{_appSettings.Consumer.Key}:{_appSettings.Consumer.Secret}");
 
             _client = new HttpClient();
             _client.DefaultRequestHeaders.Clear();
             _client.DefaultRequestHeaders.Add("Authorization", $"Basic {authToken}");
-            _client.DefaultRequestHeaders.Add("Content-Type", "application/x-www-form-urlencoded");
+            //_client.DefaultRequestHeaders.Add("Content-Type", "application/x-www-form-urlencoded");
 
             IList<KeyValuePair<string, string>> nameValueCollection = new List<KeyValuePair<string, string>> {
                 { new KeyValuePair<string, string>("grant_type", "client_credentials") } };
 
-            var result = await _client.PostAsync("https://api.twitter.com/oauth2/token", new FormUrlEncodedContent(nameValueCollection));
+            var result = _client.PostAsync("https://api.twitter.com/oauth2/token", new FormUrlEncodedContent(nameValueCollection)).Result;
 
-            TokenModel tm = JsonConvert.DeserializeObject<TokenModel>(await result.Content.ReadAsStringAsync());
+            TokenModel tm = JsonConvert.DeserializeObject<TokenModel>(result.Content.ReadAsStringAsync().Result);
 
             _authToken = tm.AccessToken;
         }
